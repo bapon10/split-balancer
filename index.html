@@ -1,83 +1,480 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Splitwise Clean</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Splitwise Lite</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --card: #faf9f7;
+    --border: #e2ddd6;
+    --text: #1a1916;
+    --muted: #8c8880;
+    --accent: #2d6a4f;
+    --accent-light: #e8f5ee;
+    --danger: #c0392b;
+    --danger-light: #fdf0ee;
+    --warn: #e67e22;
+    --warn-light: #fef6ec;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
 
-  <style>
-    body {
-      font-family: Arial;
-      background: #f5f6fa;
-      display: flex;
-      justify-content: center;
-      padding: 30px;
-    }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .box {
-      width: 100%;
-      max-width: 420px;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 16px 80px;
+    color: var(--text);
+  }
 
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
+  .app {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
 
-    button {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
+  /* Header */
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0 2px;
+  }
+  .header h1 {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+  }
+  .header h1 span {
+    color: var(--accent);
+  }
+  .version {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--border);
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
 
-    .entry {
-      background: #eee;
-      padding: 10px;
-      margin: 6px 0;
-      border-radius: 6px;
-    }
+  /* Card base */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
 
-    .result {
-      margin-top: 10px;
-      font-weight: bold;
-      text-align: center;
-    }
-  </style>
+  /* Auth card */
+  .auth-card {
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .auth-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .auth-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .auth-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .btn {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--text);
+    color: white;
+  }
+  .btn-primary:hover { background: #333; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--border); color: var(--text); }
+  .btn-danger {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid #f5c6c2;
+  }
+  .btn-danger:hover { background: #f9dbd8; }
 
+  /* Input card */
+  .input-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .input-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .input-wrap {
+    position: relative;
+    flex: 1;
+  }
+  .input-wrap .prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 15px;
+    padding: 10px 12px 10px 28px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input:focus { border-color: var(--accent); }
+  input.desc-input { padding-left: 12px; font-family: var(--sans); font-size: 14px; }
+
+  /* Expense list */
+  .list-header {
+    padding: 16px 20px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .list-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+  .list-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--border);
+    color: var(--muted);
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
+
+  .expense-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .expense-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.12s;
+    animation: slideIn 0.2s ease;
+  }
+  .expense-item:last-child { border-bottom: none; }
+  .expense-item:hover { background: #f5f3f0; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .expense-index {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    width: 18px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .expense-body { flex: 1; min-width: 0; }
+  .expense-desc {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .expense-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .expense-amount {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .expense-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .icon-btn:hover.edit { background: var(--warn-light); border-color: #f0c070; color: var(--warn); }
+  .icon-btn:hover.del  { background: var(--danger-light); border-color: #f5c6c2; color: var(--danger); }
+
+  /* Edit mode inline */
+  .expense-item.editing { background: #fffdf5; border-left: 3px solid var(--warn); padding-left: 17px; }
+  .edit-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    align-items: center;
+  }
+  .edit-row input { font-size: 13px; padding: 7px 10px 7px 10px; }
+  .edit-row .input-wrap .prefix { font-size: 12px; }
+  .save-btn {
+    font-size: 12px;
+    padding: 7px 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .save-btn:hover { background: #245c42; }
+  .cancel-btn {
+    font-size: 12px;
+    padding: 7px 10px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+
+  /* Empty state */
+  .empty {
+    padding: 36px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .empty-icon { font-size: 28px; margin-bottom: 8px; }
+
+  /* Summary card */
+  .summary-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+  .summary-name { color: var(--muted); }
+  .summary-val {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+  .settlement {
+    margin-top: 4px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .settlement.owes {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid #b7dfc9;
+  }
+  .settlement.settled {
+    background: #f0f7f4;
+    color: var(--accent);
+    border: 1px solid #b7dfc9;
+  }
+  .settlement-amount {
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--text);
+    color: white;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 99px;
+    transition: transform 0.25s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Disabled state */
+  .btn:disabled, .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
 </head>
-
 <body>
 
-<div class="box">
+<div class="app">
 
-<h2>Splitwise Lite</h2>
+  <!-- Header -->
+  <div class="header">
+    <h1>split<span>wise</span> lite</h1>
+    <span class="version">v2.0</span>
+  </div>
 
-<button onclick="login()">Login</button>
+  <!-- Auth Card -->
+  <div class="card auth-card" id="authCard">
+    <div class="auth-info">
+      <div class="avatar" id="avatar">?</div>
+      <div>
+        <div class="auth-name" id="authName">Not signed in</div>
+        <div class="auth-sub" id="authSub">Sign in to track expenses</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="loginBtn">Sign in with Google</button>
+  </div>
 
-<p id="user"></p>
+  <!-- Add Expense Card -->
+  <div class="card input-card">
+    <div class="input-label">Add Expense</div>
+    <input type="text" id="desc" class="desc-input" placeholder="What was this for? (e.g. Lunch)" />
+    <div class="input-row">
+      <div class="input-wrap">
+        <span class="prefix">₹</span>
+        <input type="number" id="amount" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <button class="btn btn-primary" id="addBtn" disabled>Add</button>
+    </div>
+  </div>
 
-<input type="number" id="amount" placeholder="Amount you paid">
-<button onclick="add()">Add Expense</button>
+  <!-- Expense List Card -->
+  <div class="card">
+    <div class="list-header">
+      <span class="list-title">Expenses</span>
+      <span class="list-count" id="listCount">0 entries</span>
+    </div>
+    <div class="expense-list" id="expenseList">
+      <div class="empty">
+        <div class="empty-icon">🧾</div>
+        Sign in and add your first expense.
+      </div>
+    </div>
+  </div>
 
-<div id="list"></div>
-<div id="result" class="result"></div>
+  <!-- Summary Card -->
+  <div class="card summary-card" id="summaryCard" style="display:none">
+    <div class="input-label">Summary</div>
+    <div id="summaryRows"></div>
+    <div class="divider"></div>
+    <div id="settlementBox"></div>
+  </div>
 
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-// import firebaseConfig from './config.js';
+import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
+// ── PUT YOUR CONFIG HERE ──
 const firebaseConfig = {
   apiKey: "AIzaSyDM8h9QGwRNZlF3JXzbdSjzzTmRLRFQYc4",
   authDomain: "splitwiser-shreyan.firebaseapp.com",
@@ -88,87 +485,232 @@ const firebaseConfig = {
   appId: "1:270734554091:web:742e2e9302acac57b4dfae",
   measurementId: "G-H1MME1T04J"
 };
+// ─────────────────────────
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const app  = initializeApp(firebaseConfig);
+const db   = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-const refDB = ref(db, "group1");
+const dbRef = ref(db, "group1");
+
 let currentUser = null;
+let editingKey  = null;
 
-window.login = function () {
-  signInWithPopup(auth, provider).catch(err => alert("Login failed: " + err.message));
-};
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUser = user;
-    document.getElementById("user").textContent = "Logged in as " + user.displayName;
+// ── AUTH ──
+document.getElementById("loginBtn").addEventListener("click", () => {
+  if (currentUser) {
+    signOut(auth);
+  } else {
+    signInWithPopup(auth, provider).catch(err => toast("Login failed: " + err.message));
   }
 });
 
-window.add = function () {
-  if (!currentUser) { alert("Login first"); return; }
-  const amount = parseFloat(document.getElementById("amount").value);
-  if (isNaN(amount) || amount <= 0) { alert("Enter valid amount"); return; }
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  const btn = document.getElementById("loginBtn");
+  const addBtn = document.getElementById("addBtn");
+  if (user) {
+    document.getElementById("authName").textContent = user.displayName;
+    document.getElementById("authSub").textContent  = user.email;
+    const av = document.getElementById("avatar");
+    if (user.photoURL) {
+      av.innerHTML = `<img src="${user.photoURL}" alt="">`;
+    } else {
+      av.textContent = user.displayName?.[0] ?? "U";
+    }
+    btn.textContent = "Sign out";
+    btn.className = "btn btn-ghost";
+    addBtn.disabled = false;
+  } else {
+    document.getElementById("authName").textContent = "Not signed in";
+    document.getElementById("authSub").textContent  = "Sign in to track expenses";
+    document.getElementById("avatar").textContent   = "?";
+    btn.textContent = "Sign in with Google";
+    btn.className = "btn btn-primary";
+    addBtn.disabled = true;
+  }
+});
 
-  push(refDB, {
+// ── ADD ──
+document.getElementById("addBtn").addEventListener("click", addExpense);
+document.getElementById("amount").addEventListener("keydown", e => { if (e.key === "Enter") addExpense(); });
+
+function addExpense() {
+  if (!currentUser) { toast("Please sign in first"); return; }
+  const amount = parseFloat(document.getElementById("amount").value);
+  const desc   = document.getElementById("desc").value.trim() || "Expense";
+  if (isNaN(amount) || amount <= 0) { toast("Enter a valid amount"); return; }
+
+  push(dbRef, {
     amount,
+    desc,
     paidBy: currentUser.uid,
     name: currentUser.displayName,
-    timestamp: Date.now()         // useful for ordering later
+    timestamp: Date.now()
   })
-  .then(() => { document.getElementById("amount").value = ""; })
-  .catch(err => alert("Write failed: " + err.message));
-};
+  .then(() => {
+    document.getElementById("amount").value = "";
+    document.getElementById("desc").value   = "";
+    toast("Expense added ✓");
+  })
+  .catch(err => toast("Error: " + err.message));
+}
 
-onValue(refDB, (snap) => {
-  const data = snap.val() || {};
-  const entries = Object.values(data);
-
-  // Sort by timestamp so newest shows at bottom
+// ── LISTEN ──
+onValue(dbRef, snap => {
+  const data    = snap.val() || {};
+  const entries = Object.entries(data).map(([k, v]) => ({ key: k, ...v }));
   entries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-  let totals = {};
-  let nameMap = {};
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+  renderList(entries);
+  renderSummary(entries);
+});
 
+// ── RENDER LIST ──
+function renderList(entries) {
+  const list = document.getElementById("expenseList");
+  document.getElementById("listCount").textContent =
+    entries.length === 0 ? "0 entries" :
+    entries.length === 1 ? "1 entry" : `${entries.length} entries`;
+
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🧾</div>No expenses yet. Add one above.</div>`;
+    return;
+  }
+
+  list.innerHTML = "";
   entries.forEach((e, i) => {
+    const isEditing = editingKey === e.key;
+    const isOwn     = currentUser && e.paidBy === currentUser.uid;
+
+    const item = document.createElement("div");
+    item.className = "expense-item" + (isEditing ? " editing" : "");
+    item.dataset.key = e.key;
+
+    const time = e.timestamp ? new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+
+    item.innerHTML = `
+      <span class="expense-index">${i + 1}</span>
+      <div class="expense-body">
+        <div class="expense-desc">${escHtml(e.desc || "Expense")}</div>
+        <div class="expense-meta">${escHtml(e.name || "Unknown")}${time ? " · " + time : ""}</div>
+        ${isEditing ? `
+          <div class="edit-row">
+            <input type="text" class="edit-desc" value="${escHtml(e.desc || "")}" placeholder="Description" style="flex:1;padding-left:10px">
+            <div class="input-wrap" style="width:110px">
+              <span class="prefix">₹</span>
+              <input type="number" class="edit-amount" value="${e.amount}" min="0" step="0.01">
+            </div>
+            <button class="save-btn" onclick="saveEdit('${e.key}')">Save</button>
+            <button class="cancel-btn" onclick="cancelEdit()">✕</button>
+          </div>` : ""}
+      </div>
+      <span class="expense-amount">₹${e.amount.toFixed(2)}</span>
+      ${isOwn && !isEditing ? `
+        <div class="expense-actions">
+          <button class="icon-btn edit" title="Edit" onclick="startEdit('${e.key}')">✎</button>
+          <button class="icon-btn del"  title="Delete" onclick="deleteExpense('${e.key}')">✕</button>
+        </div>` : ""}
+    `;
+    list.appendChild(item);
+  });
+}
+
+// ── RENDER SUMMARY ──
+function renderSummary(entries) {
+  const summaryCard = document.getElementById("summaryCard");
+  if (entries.length === 0) { summaryCard.style.display = "none"; return; }
+
+  summaryCard.style.display = "flex";
+
+  let totals = {}, nameMap = {};
+  entries.forEach(e => {
     if (!totals[e.paidBy]) totals[e.paidBy] = 0;
     totals[e.paidBy] += e.amount;
     nameMap[e.paidBy] = e.name;
-
-    const div = document.createElement("div");
-    div.className = "entry";
-    // Show index, name, and amount clearly
-    div.textContent = `#${i + 1}  ${e.name} paid ₹${e.amount.toFixed(2)}`;
-    list.appendChild(div);
   });
 
-  // Show per-user running totals
-  const result = document.getElementById("result");
-  let summary = "";
-  for (const uid in totals) {
-    summary += `${nameMap[uid]}: ₹${totals[uid].toFixed(2)} total paid\n`;
-  }
+  const rows = document.getElementById("summaryRows");
+  rows.innerHTML = Object.entries(totals).map(([uid, total]) => `
+    <div class="summary-row">
+      <span class="summary-name">${escHtml(nameMap[uid])}</span>
+      <span class="summary-val">₹${total.toFixed(2)}</span>
+    </div>
+  `).join("");
 
+  const settlement = document.getElementById("settlementBox");
   const users = Object.keys(totals);
   if (users.length === 2) {
     const [u1, u2] = users;
     const net = (totals[u1] - totals[u2]) / 2;
-    if (net > 0) {
-      summary += `\n→ ${nameMap[u2]} owes ${nameMap[u1]} ₹${net.toFixed(2)}`;
-    } else if (net < 0) {
-      summary += `\n→ ${nameMap[u1]} owes ${nameMap[u2]} ₹${Math.abs(net).toFixed(2)}`;
+    if (Math.abs(net) < 0.01) {
+      settlement.innerHTML = `<div class="settlement settled">✓ All settled up!</div>`;
     } else {
-      summary += "\n✓ All settled!";
+      const payer   = net > 0 ? nameMap[u2] : nameMap[u1];
+      const payee   = net > 0 ? nameMap[u1] : nameMap[u2];
+      const amt     = Math.abs(net).toFixed(2);
+      settlement.innerHTML = `
+        <div class="settlement owes">
+          <span>→</span>
+          <span>${escHtml(payer)} owes ${escHtml(payee)} <span class="settlement-amount">₹${amt}</span></span>
+        </div>`;
     }
+  } else {
+    settlement.innerHTML = "";
   }
+}
 
-  result.style.whiteSpace = "pre-line";
-  result.textContent = summary;
-});
+// ── EDIT / DELETE ──
+window.startEdit = function(key) {
+  editingKey = key;
+  // re-trigger onValue render by forcing a fresh read
+  onValue(dbRef, snap => {
+    const data    = snap.val() || {};
+    const entries = Object.entries(data).map(([k, v]) => ({ key: k, ...v }));
+    entries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    renderList(entries);
+  }, { onlyOnce: true });
+};
+
+window.cancelEdit = function() {
+  editingKey = null;
+  onValue(dbRef, snap => {
+    const data    = snap.val() || {};
+    const entries = Object.entries(data).map(([k, v]) => ({ key: k, ...v }));
+    entries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    renderList(entries);
+  }, { onlyOnce: true });
+};
+
+window.saveEdit = function(key) {
+  const item       = document.querySelector(`[data-key="${key}"]`);
+  const newDesc    = item.querySelector(".edit-desc").value.trim() || "Expense";
+  const newAmount  = parseFloat(item.querySelector(".edit-amount").value);
+  if (isNaN(newAmount) || newAmount <= 0) { toast("Enter a valid amount"); return; }
+
+  update(ref(db, `group1/${key}`), { desc: newDesc, amount: newAmount })
+    .then(() => { editingKey = null; toast("Updated ✓"); })
+    .catch(err => toast("Error: " + err.message));
+};
+
+window.deleteExpense = function(key) {
+  remove(ref(db, `group1/${key}`))
+    .then(() => toast("Deleted"))
+    .catch(err => toast("Error: " + err.message));
+};
+
+// ── TOAST ──
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), 2400);
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
 </script>
 </body>
 </html>
