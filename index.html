@@ -405,6 +405,80 @@
 
   /* Disabled state */
   .btn:disabled, .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Presence bar */
+  .presence-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    min-height: 48px;
+  }
+  .presence-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-right: 2px;
+    flex-shrink: 0;
+  }
+  .presence-avatars {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .presence-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--card);
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    overflow: hidden;
+    flex-shrink: 0;
+    margin-left: -6px;
+    position: relative;
+    transition: transform 0.15s;
+    cursor: default;
+  }
+  .presence-avatar:first-child { margin-left: 0; }
+  .presence-avatar:hover { transform: translateY(-2px); z-index: 2; }
+  .presence-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .presence-avatar .dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 7px;
+    height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 1.5px solid var(--card);
+  }
+  .presence-names {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+  .presence-names strong { color: var(--text); font-weight: 500; }
+  .presence-empty {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* Avatar color palette for users without photo */
+  .pal-0 { background: #6366f1; }
+  .pal-1 { background: #ec4899; }
+  .pal-2 { background: #f59e0b; }
+  .pal-3 { background: #10b981; }
+  .pal-4 { background: #3b82f6; }
 </style>
 </head>
 <body>
@@ -427,6 +501,15 @@
       </div>
     </div>
     <button class="btn btn-primary" id="loginBtn">Sign in with Google</button>
+  </div>
+
+  <!-- Presence Card -->
+  <div class="card" id="presenceCard">
+    <div class="presence-bar">
+      <span class="presence-label">Online</span>
+      <div class="presence-avatars" id="presenceAvatars"></div>
+      <span class="presence-names" id="presenceNames"><span class="presence-empty">No one here yet</span></span>
+    </div>
   </div>
 
   <!-- Add Expense Card -->
@@ -471,7 +554,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update, set, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
 // ── PUT YOUR CONFIG HERE ──
@@ -491,10 +574,12 @@ const app  = initializeApp(firebaseConfig);
 const db   = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-const dbRef = ref(db, "group1");
+const dbRef       = ref(db, "group1");
+const presenceRef = ref(db, "presence");
 
 let currentUser = null;
 let editingKey  = null;
+let myPresenceRef = null;
 
 // ── AUTH ──
 document.getElementById("loginBtn").addEventListener("click", () => {
@@ -521,6 +606,16 @@ onAuthStateChanged(auth, user => {
     btn.textContent = "Sign out";
     btn.className = "btn btn-ghost";
     addBtn.disabled = false;
+
+    // ── PRESENCE: write self, remove on disconnect ──
+    myPresenceRef = ref(db, `presence/${user.uid}`);
+    set(myPresenceRef, {
+      name: user.displayName,
+      photo: user.photoURL || "",
+      joinedAt: serverTimestamp()
+    });
+    onDisconnect(myPresenceRef).remove();
+
   } else {
     document.getElementById("authName").textContent = "Not signed in";
     document.getElementById("authSub").textContent  = "Sign in to track expenses";
@@ -528,6 +623,9 @@ onAuthStateChanged(auth, user => {
     btn.textContent = "Sign in with Google";
     btn.className = "btn btn-primary";
     addBtn.disabled = true;
+
+    // ── PRESENCE: remove self on sign-out ──
+    if (myPresenceRef) { remove(myPresenceRef); myPresenceRef = null; }
   }
 });
 
@@ -566,7 +664,42 @@ onValue(dbRef, snap => {
   renderSummary(entries);
 });
 
-// ── RENDER LIST ──
+// ── PRESENCE LISTENER ──
+onValue(presenceRef, snap => {
+  const data  = snap.val() || {};
+  const users = Object.entries(data).map(([uid, v]) => ({ uid, ...v }));
+  renderPresence(users);
+});
+
+function renderPresence(users) {
+  const avatarsEl = document.getElementById("presenceAvatars");
+  const namesEl   = document.getElementById("presenceNames");
+  const palette   = ["pal-0","pal-1","pal-2","pal-3","pal-4"];
+
+  if (users.length === 0) {
+    avatarsEl.innerHTML = "";
+    namesEl.innerHTML   = `<span class="presence-empty">No one here yet</span>`;
+    return;
+  }
+
+  avatarsEl.innerHTML = users.map((u, i) => {
+    const pal = palette[i % palette.length];
+    const inner = u.photo
+      ? `<img src="${escHtml(u.photo)}" alt="">`
+      : escHtml((u.name || "?")[0].toUpperCase());
+    const isMe = currentUser && u.uid === currentUser.uid;
+    return `<div class="presence-avatar ${u.photo ? '' : pal}" title="${escHtml(u.name)}${isMe ? ' (you)' : ''}">${inner}<span class="dot"></span></div>`;
+  }).join("");
+
+  const names = users.map((u, i) => {
+    const isMe = currentUser && u.uid === currentUser.uid;
+    const label = isMe ? `<strong>${escHtml(u.name)} (you)</strong>` : `<strong>${escHtml(u.name)}</strong>`;
+    return label;
+  });
+  namesEl.innerHTML = names.join('<span style="color:var(--border)"> · </span>');
+}
+
+
 function renderList(entries) {
   const list = document.getElementById("expenseList");
   document.getElementById("listCount").textContent =
